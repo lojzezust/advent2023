@@ -1,0 +1,9 @@
+
+total = 0
+with open("days/01/input.txt") as file:
+    for line in file:
+        digits = [c for c in line if c.isdigit()]
+        val = int(digits[0] + digits[-1]) # Combine first and last digit
+        total += val
+
+print("Part 1:", total)
