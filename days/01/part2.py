@@ -9,7 +9,7 @@ regex_rev = r'eno|owt|eerht|ruof|evif|xis|neves|thgie|enin|\d'
 
 
 total = 0
-with open("days/01/input.txt") as file:
+with open("inputs/day01.txt") as file:
     for line in file:
         # Find first match (digit or digit-word) from both directions
         s1 = re.search(regex, line).group()
