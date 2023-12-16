@@ -89,8 +89,50 @@ impl Field {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 struct Beam{x:i32,y:i32,dir:Dir}
+
+/// Calculates number of energized cells when starting with `start_beam`
+fn calculate_energized(map: &Matrix<Field>, start_beam: &Beam) -> i32 {
+    let (n,m) = (map.len(), map[0].len());
+    // For each cell stores directions of visited beams
+    let mut visited: Matrix<Vec<Dir>> = vec![vec![Vec::new();m]; n];
+    let mut queue: VecDeque<Beam> = VecDeque::new();
+    queue.push_back(start_beam.clone());
+    while !queue.is_empty() {
+        let beam = queue.pop_front().unwrap();
+        // println!("{:?}", beam);
+        // Out of bounds
+        if beam.x < 0 || beam.y < 0 || beam.x >= m as i32 || beam.y >= n as i32 {
+            continue
+        }
+
+        let (x,y) = (beam.x as usize, beam.y as usize);
+
+        // If same-direction beam already visited the cell -> stop cycle
+        if visited[y][x].contains(&beam.dir) {
+            continue;
+        }
+        visited[y][x].push(beam.dir);
+        
+        // Add out beam(s) to queue
+        let field = &map[y][x];
+        let out_beams = field.process_beam(beam);
+        for b in out_beams {
+            queue.push_back(b);
+        }
+    }
+
+    // Count number of visited cells
+    let mut total: i32 = 0;
+    for row in visited {
+        total += row.iter()
+            .map(|x| if x.len() > 0 {1} else {0})
+            .sum::<i32>();
+    } 
+
+    total
+}
 
 fn main() {
     let f = File::open("inputs/day16.txt").expect("Missing file");
@@ -109,41 +151,29 @@ fn main() {
 
     let (n,m) = (map.len(), map[0].len());
 
-    // For each cell stores directions of visited beams
-    let mut visited: Matrix<Vec<Dir>> = vec![vec![Vec::new();m]; n];
-    let mut queue: VecDeque<Beam> = VecDeque::new();
-    queue.push_back(Beam{x:0, y:0, dir:Dir::Right});
-    while !queue.is_empty() {
-        let beam = queue.pop_front().unwrap();
-        // println!("{:?}", beam);
-        // Out of bounds
-        if beam.x < 0 || beam.y < 0 || beam.x >= m as i32 || beam.y >= n as i32 {
-            continue
-        }
+    let mut max = 0;
+    let mut optimal: Option<Beam> = None;
+    for start_dir in [Dir::Right, Dir::Left, Dir::Up, Dir::Down]{
+        // Cycle through all starting positions for a given direction
+        let beams: Vec<Beam> = match start_dir {
+            Dir::Left => (0..n).map(|y| Beam{x: (m-1) as i32,y: y as i32, dir: start_dir}).collect(),
+            Dir::Right => (0..n).map(|y| Beam{x: 0, y: y as i32, dir: start_dir}).collect(),
+            Dir::Up => (0..m).map(|x| Beam{x: x as i32, y: (n-1) as i32, dir: start_dir}).collect(),
+            Dir::Down => (0..m).map(|x| Beam{x: x as i32, y: 0, dir: start_dir}).collect(),
+        };
 
-        let (x,y) = (beam.x as usize, beam.y as usize);
+        for start_beam in beams {
+            let res = calculate_energized(&map, &start_beam);
 
-        // If same-direction beam already visited the cell -> stop cycle
-        if visited[y][x].contains(&beam.dir) {
-            continue;
-        }
-        visited[y][x].push(beam.dir);
-
-        // Add out beam(s) to queue
-        let field = &map[y][x];
-        let out_beams = field.process_beam(beam);
-        for b in out_beams {
-            queue.push_back(b);
+            // Keep track of best solution
+            if res > max {
+                max = res;
+                optimal = Some(start_beam);
+            }
         }
     }
 
-    // Count number of visited cells
-    let mut total: i32 = 0;
-    for row in visited {
-        total += row.iter()
-            .map(|x| if x.len() > 0 {1} else {0})
-            .sum::<i32>();
-    } 
 
-    println!("Sum: {}", total);
+    println!("Best configuration: {:?}", optimal);
+    println!("Coverage: {}", max);
 }
