@@ -19,6 +19,7 @@ impl Tile {
         }
     }
 
+    /// Converts tile to char (debugging purposes)
     fn to_char(tile: &Self) -> char {
         match tile {
             Tile::Rock => 'O',
@@ -32,6 +33,7 @@ fn main() {
     let f = File::open("inputs/day14.txt").expect("Missing file");
     let reader = BufReader::new(f);
 
+    // Read data
     let mut pat: Matrix<Tile> = Matrix::new();
     for line in reader.lines(){
         let line = line.expect("Error reading line.");
@@ -43,11 +45,6 @@ fn main() {
         let tiles: Vec<Tile> = line.chars().map(Tile::from).collect();
         pat.push(tiles);
     }
-
-    for line in &pat {
-        println!("{:?}", line.iter().map(Tile::to_char).collect::<Vec<char>>())
-    }
-    println!();
 
     // Move north
     for col_i in 0..pat[0].len() {
@@ -73,10 +70,7 @@ fn main() {
         }
     }
 
-    for line in &pat {
-        println!("{:?}", line.iter().map(Tile::to_char).collect::<Vec<char>>())
-    }
-
+    // Compute load
     let n = pat.len();
     let mut total = 0;
     for (i, row) in pat.iter().enumerate() {
