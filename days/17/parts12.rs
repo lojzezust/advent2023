@@ -1,4 +1,4 @@
-use std::collections::{BinaryHeap, HashSet};
+use std::collections::{BinaryHeap, HashMap};
 use std::{fs::File, io::BufReader};
 use std::io::prelude::*;
 
@@ -33,11 +33,10 @@ fn allow_dir_part2(cur_dir: Dir, next_dir: Dir, l:usize) -> bool{
 fn dijkstra(map: &Matrix<i32>, part2: bool) -> i32{
     let (n,m) = (map.len(), map[0].len());
     let mut heap: BinaryHeap<State> = BinaryHeap::new();
-    let mut visited: HashSet<Node> = HashSet::new();
-    let mut added: HashSet<State> = HashSet::new();
+    let mut best_cost: HashMap<Node, i32> = HashMap::new();
     let start_n = Node(0,0,Dir::Right,0);
     heap.push(State(0, start_n.clone()));
-    visited.insert(start_n);
+    best_cost.insert(start_n, 0);
 
     // Function to check if new direction is allowed
     let allow_dir = if part2 {allow_dir_part2} else {allow_dir_part1};
@@ -46,7 +45,10 @@ fn dijkstra(map: &Matrix<i32>, part2: bool) -> i32{
         let s = heap.pop().unwrap();
         // println!("{:?}", s);
         let State(c, Node(i,j, dir, l)) = s;
-        visited.insert(s.1);
+
+        if c < best_cost[&s.1] {
+            continue;
+        }
 
         if i == n-1 && j == m-1 {
             return -c;
@@ -54,12 +56,11 @@ fn dijkstra(map: &Matrix<i32>, part2: bool) -> i32{
 
         // Add candidate nodes to PQ
         if i > 0 && dir != Dir::Down && allow_dir(dir, Dir::Up, l) {
-
             let new_l = if dir == Dir::Up {l+1} else {1};
             let new_n = Node(i-1, j, Dir::Up, new_l);
             let s = State(c - map[i-1][j], new_n.clone());
-            if !visited.contains(&new_n) && !added.contains(&s) {
-                added.insert(s.clone());
+            if !best_cost.contains_key(&new_n) || !best_cost[&new_n] < s.0 {
+                best_cost.insert(new_n.clone(), s.0);
                 heap.push(s);
             }
         }
@@ -67,8 +68,8 @@ fn dijkstra(map: &Matrix<i32>, part2: bool) -> i32{
             let new_l = if dir == Dir::Left {l+1} else {1};
             let new_n = Node(i, j-1, Dir::Left, new_l);
             let s = State(c - map[i][j-1], new_n.clone());
-            if !visited.contains(&new_n) && !added.contains(&s) {
-                added.insert(s.clone());
+            if !best_cost.contains_key(&new_n) || !best_cost[&new_n] < s.0 {
+                best_cost.insert(new_n.clone(), s.0);
                 heap.push(s);
             }
         }
@@ -76,8 +77,8 @@ fn dijkstra(map: &Matrix<i32>, part2: bool) -> i32{
             let new_l = if dir == Dir::Down {l+1} else {1};
             let new_n = Node(i+1, j, Dir::Down, new_l);
             let s = State(c - map[i+1][j], new_n.clone());
-            if !visited.contains(&new_n) && !added.contains(&s) {
-                added.insert(s.clone());
+            if !best_cost.contains_key(&new_n) || !best_cost[&new_n] < s.0 {
+                best_cost.insert(new_n.clone(), s.0);
                 heap.push(s);
             }
         }
@@ -85,8 +86,8 @@ fn dijkstra(map: &Matrix<i32>, part2: bool) -> i32{
             let new_l = if dir == Dir::Right {l+1} else {1};
             let new_n = Node(i, j+1, Dir::Right, new_l);
             let s = State(c - map[i][j+1], new_n.clone());
-            if !visited.contains(&new_n) && !added.contains(&s) {
-                added.insert(s.clone());
+            if !best_cost.contains_key(&new_n) || !best_cost[&new_n] < s.0 {
+                best_cost.insert(new_n.clone(), s.0);
                 heap.push(s);
             }
         }
